@@ -81,3 +81,26 @@ def test_error_categories_are_reported(feeds, lake):
     assert sum(stats.errors.values()) == stats.quarantined
     assert set(stats.errors) <= {"source contract", "transform", "canonical contract"}
     assert Counter(stats.errors)
+
+
+def test_vendor_file_quarantines_every_injected_defect(feeds, truth, lake):
+    """Shape checks alone let `XX` through as a country; the vendor file has two such rows."""
+    m = Mapping.load("vendor_customers")
+    stats = pipeline.run(m, feeds / m.feed, lake)
+    injected = {d["id"] for d in truth["defects"] if d["source"] == "vendor_file"}
+    refused = {json.loads(r["record"])["Kundennr"] for r in lake.rows("quarantine")}
+    assert refused == injected
+    assert stats.quarantined == len(injected)
+
+
+@pytest.mark.parametrize("code", ["XX", "UK", "EU"])
+def test_canonical_country_must_be_an_assigned_iso_code(code):
+    from datetime import UTC, datetime
+
+    from pydantic import ValidationError
+
+    from uil.canonical import Customer
+
+    now = datetime(2026, 1, 1, tzinfo=UTC)
+    with pytest.raises(ValidationError, match="ISO 3166"):
+        Customer(customer_id="t:1", name="n", country=code, created_at=now, updated_at=now)
