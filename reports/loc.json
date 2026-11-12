@@ -1,0 +1,46 @@
+{
+  "sources": {
+    "kafka_orders": {
+      "bespoke": 72,
+      "declarative": 15
+    },
+    "salesforce_accounts": {
+      "bespoke": 77,
+      "declarative": 15
+    },
+    "salesforce_opportunities": {
+      "bespoke": 80,
+      "declarative": 15
+    },
+    "sap_customers": {
+      "bespoke": 60,
+      "declarative": 17
+    },
+    "sap_orders": {
+      "bespoke": 66,
+      "declarative": 15
+    },
+    "vendor_customers": {
+      "bespoke": 58,
+      "declarative": 17
+    }
+  },
+  "framework": {
+    "readers.py": 115,
+    "transforms.py": 141,
+    "mapping.py": 99,
+    "pipeline.py": 67
+  },
+  "per_source": {
+    "bespoke_mean": 68.8,
+    "declarative_mean": 15.7,
+    "reduction_pct": 77.2
+  },
+  "total": {
+    "sources": 6,
+    "bespoke": 413,
+    "declarative_incl_framework": 516,
+    "reduction_pct": -24.9,
+    "break_even_sources": 8
+  }
+}
