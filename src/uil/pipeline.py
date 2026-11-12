@@ -12,6 +12,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from .canonical import KEYS
 from .lake import Lake
 from .mapping import ContractViolation, Mapping
 from .readers import read
@@ -27,6 +28,7 @@ class RunStats:
     skipped: int = 0  # filtered out by the mapping (other record types on a shared feed)
     mapped: int = 0
     quarantined: int = 0
+    collapsed: int = 0  # superseded versions of a key within the batch (redeliveries, updates)
     inserted: int = 0
     updated: int = 0
     errors: Counter = field(default_factory=Counter)
@@ -50,9 +52,10 @@ def run(mapping: Mapping, path: Path, lake: Lake, batch_id: str | None = None) -
     batch_id = batch_id or uuid.uuid4().hex[:12]
     stats = RunStats(mapping.source, mapping.entity, batch_id)
     now = datetime.now(UTC)
-    good: list[dict] = []
+    key = KEYS[mapping.entity]
+    latest: dict[str, tuple[tuple, dict]] = {}
     bad: list[tuple[dict, str]] = []
-    for rec in read(mapping.reader, path):
+    for pos, rec in enumerate(read(mapping.reader, path)):
         stats.read += 1
         if not mapping.matches(rec):
             stats.skipped += 1
@@ -65,8 +68,16 @@ def run(mapping: Mapping, path: Path, lake: Lake, batch_id: str | None = None) -
             stats.errors[reason.split(":")[0]] += 1
             continue
         row.update(_source=mapping.source, _batch_id=batch_id, _ingested_at=now)
-        good.append(row)
-    stats.mapped = len(good)
+        stats.mapped += 1
+        # A batch can hold several versions of one key: Kafka redelivers (at-least-once) and an
+        # order emits created/updated/cancelled events, which arrive out of order across
+        # partitions. Keep the newest by business time; ties go to the later log position.
+        version = (row["updated_at"], rec.get("_partition", 0), rec.get("_offset", pos))
+        prev = latest.get(row[key])
+        if prev is None or version > prev[0]:
+            latest[row[key]] = (version, row)
+    good = [row for _, row in latest.values()]
+    stats.collapsed = stats.mapped - len(good)
     stats.quarantined = lake.quarantine(mapping.source, mapping.entity, batch_id, bad)
     stats.inserted, stats.updated = lake.upsert(mapping.entity, good)
     return stats
