@@ -1,0 +1,15 @@
+source: salesforce.accounts
+domain: b2b_sales
+entity: customer
+feed: b2b_sales/salesforce_accounts
+reader: {type: salesforce}
+contract:
+  required: [Id, Name, BillingCountry, CreatedDate]
+fields:
+  customer_id: {from: Id, transform: [sf_id18, {prefix: "sf:"}]}
+  name:        {from: Name, transform: [strip]}
+  country:     {from: BillingCountry, transform: [strip, {map: {table: {Germany: DE, United States: US, USA: US, France: FR, India: IN, United Kingdom: GB, Netherlands: NL, Japan: JP}}}]}
+  city:        {from: BillingCity, transform: [strip, null_if_empty]}
+  segment:     {from: Industry, transform: [lower]}
+  created_at:  {from: CreatedDate, transform: [datetime]}
+  updated_at:  {from: LastModifiedDate, transform: [datetime]}

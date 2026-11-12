@@ -1,0 +1,17 @@
+source: sap.customers
+domain: manufacturing
+entity: customer
+feed: manufacturing/sap_customers
+reader: {type: sap_odata}
+contract:
+  required: [Customer, CustomerName, Country, CreationDate]
+  patterns: {Customer: "^[0-9]{10}$"}
+fields:
+  customer_id: {from: Customer, transform: [strip, {prefix: "sap:"}]}
+  name:        {from: CustomerName, transform: [strip]}
+  country:     {from: Country, transform: [strip, upper]}
+  city:        {from: CityName, transform: [strip, null_if_empty]}
+  email:       {from: EmailAddress, transform: [strip, lower, null_if_empty]}
+  segment:     {from: CustomerAccountGroup, transform: [{map: {table: {KUNA: domestic, KUNE: export, CPD: one_time}}}]}
+  created_at:  {from: CreationDate, transform: [sap_datetime]}
+  updated_at:  {from: LastChangeDateTime, transform: [sap_datetime]}

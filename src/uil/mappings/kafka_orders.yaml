@@ -1,0 +1,15 @@
+source: kafka.orders
+domain: retail
+entity: order
+feed: retail/kafka_orders
+reader: {type: kafka, topic: orders}
+contract:
+  required: [order_id, customer_ref, order_ts, currency, amount_cents, status, event_ts]
+fields:
+  order_id:    {from: order_id, transform: [{prefix: "retail:"}]}
+  customer_id: {from: customer_ref, transform: [{prefix: "retail:"}]}
+  order_date:  {from: order_ts, transform: [epoch_ms, date]}
+  currency:    {from: currency, transform: [upper]}
+  amount:      {from: amount_cents, transform: [cents]}
+  status:      {from: status, transform: [{map: {table: {open: open, shipped: shipped, cancelled: cancelled}}}]}
+  updated_at:  {from: event_ts, transform: [epoch_ms]}

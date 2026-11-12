@@ -1,0 +1,15 @@
+source: salesforce.opportunities
+domain: b2b_sales
+entity: order
+feed: b2b_sales/salesforce_opportunities
+reader: {type: salesforce}
+contract:
+  required: [Id, AccountId, CloseDate, StageName]
+fields:
+  order_id:    {from: Id, transform: [sf_id18, {prefix: "sf:"}]}
+  customer_id: {from: AccountId, transform: [sf_id18, {prefix: "sf:"}]}
+  order_date:  {from: CloseDate, transform: [date]}
+  currency:    {from: CurrencyIsoCode, transform: [upper]}
+  amount:      {from: Amount, transform: [decimal]}
+  status:      {from: StageName, transform: [{map: {table: {Prospecting: open, Negotiation: open, "Closed Won": won, "Closed Lost": closed_lost}}}]}
+  updated_at:  {from: LastModifiedDate, transform: [datetime]}

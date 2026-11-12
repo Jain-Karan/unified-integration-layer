@@ -1,0 +1,15 @@
+source: sap.sales_orders
+domain: manufacturing
+entity: order
+feed: manufacturing/sap_orders
+reader: {type: sap_odata}
+contract:
+  required: [SalesOrder, SoldToParty, SalesOrderDate, TotalNetAmount, OverallSDProcessStatus]
+fields:
+  order_id:    {from: SalesOrder, transform: [strip, {prefix: "sap:"}]}
+  customer_id: {from: SoldToParty, transform: [strip, {prefix: "sap:"}]}
+  order_date:  {from: SalesOrderDate, transform: [sap_datetime, date]}
+  currency:    {from: TransactionCurrency, transform: [strip, upper]}
+  amount:      {from: TotalNetAmount, transform: [decimal]}
+  status:      {from: OverallSDProcessStatus, transform: [{map: {table: {A: open, B: open, C: shipped}}}]}
+  updated_at:  {from: LastChangeDateTime, transform: [sap_datetime]}

@@ -1,0 +1,17 @@
+source: vendor.distributor_customers
+domain: retail
+entity: customer
+feed: retail/vendor_customers
+reader: {type: flatfile, delimiter: ";", encoding: latin-1, skip_rows: 1}
+contract:
+  required: [Kundennr, Name, Land, Angelegt]
+  patterns: {Kundennr: "^R[0-9]{5}$"}
+fields:
+  customer_id: {from: Kundennr, transform: [strip, {prefix: "retail:"}]}
+  name:        {from: Name, transform: [strip]}
+  country:     {from: Land, transform: [strip, upper]}
+  city:        {from: Ort, transform: [strip, null_if_empty]}
+  email:       {from: E-Mail, transform: [strip, lower, null_if_empty]}
+  segment:     {from: Umsatzklasse, transform: [{map: {table: {A: key_account, B: core, C: tail}}}]}
+  created_at:  {from: Angelegt, transform: [{datetime: {format: "%d.%m.%Y", tz: Europe/Berlin}}]}
+  updated_at:  {from: Angelegt, transform: [{datetime: {format: "%d.%m.%Y", tz: Europe/Berlin}}]}
