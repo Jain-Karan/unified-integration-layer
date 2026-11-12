@@ -15,6 +15,7 @@ from pathlib import Path
 import pyarrow as pa
 from pyiceberg.catalog.sql import SqlCatalog
 from pyiceberg.exceptions import NoSuchTableError
+from pyiceberg.expressions import In
 
 from .canonical import ARROW_SCHEMAS, KEYS
 
@@ -75,13 +76,30 @@ class Lake:
             diff = sorted(set(live_cols.items()) ^ set(want_cols.items()), key=str)
             raise SinkContractError(f"{entity}: table schema differs from canonical model: {diff}")
 
-    def upsert(self, entity: str, rows: list[dict]) -> tuple[int, int]:
+    def upsert(self, entity: str, rows: list[dict]) -> tuple[int, int, int]:
+        """Insert new keys, update keys whose incoming version is at least as new as the
+        stored one. Returns (inserted, updated, stale); stale rows are older than what the
+        table already holds (late or redelivered events) and are not written."""
         if not rows:
-            return 0, 0
+            return 0, 0, 0
         self.check_sink_contract(entity)
-        data = pa.Table.from_pylist(rows, schema=ARROW_SCHEMAS[entity])
-        res = self.table(entity).upsert(data, join_cols=[KEYS[entity]])
-        return res.rows_inserted, res.rows_updated
+        key = KEYS[entity]
+        table = self.table(entity)
+        stored = (
+            table.scan(
+                row_filter=In(key, {r[key] for r in rows}), selected_fields=(key, "updated_at")
+            )
+            .to_arrow()
+            .to_pylist()
+        )
+        current = {r[key]: r["updated_at"] for r in stored}
+        fresh = [r for r in rows if r[key] not in current or r["updated_at"] >= current[r[key]]]
+        stale = len(rows) - len(fresh)
+        if not fresh:
+            return 0, 0, stale
+        data = pa.Table.from_pylist(fresh, schema=ARROW_SCHEMAS[entity])
+        res = table.upsert(data, join_cols=[key])
+        return res.rows_inserted, res.rows_updated, stale
 
     def quarantine(
         self, source: str, entity: str, batch_id: str, items: list[tuple[dict, str]]

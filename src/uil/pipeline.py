@@ -31,6 +31,7 @@ class RunStats:
     collapsed: int = 0  # superseded versions of a key within the batch (redeliveries, updates)
     inserted: int = 0
     updated: int = 0
+    stale: int = 0  # older than the version already in the lake; not written
     errors: Counter = field(default_factory=Counter)
 
     def as_dict(self) -> dict:
@@ -79,5 +80,5 @@ def run(mapping: Mapping, path: Path, lake: Lake, batch_id: str | None = None) -
     good = [row for _, row in latest.values()]
     stats.collapsed = stats.mapped - len(good)
     stats.quarantined = lake.quarantine(mapping.source, mapping.entity, batch_id, bad)
-    stats.inserted, stats.updated = lake.upsert(mapping.entity, good)
+    stats.inserted, stats.updated, stats.stale = lake.upsert(mapping.entity, good)
     return stats
