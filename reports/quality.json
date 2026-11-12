@@ -1,0 +1,85 @@
+{
+  "seed": 7,
+  "sources": {
+    "kafka.orders": {
+      "read": 2433,
+      "mapped": 2349,
+      "quarantined": 84,
+      "collapsed": 196,
+      "inserted": 1447,
+      "updated": 365,
+      "stale": 341,
+      "batches": 5
+    },
+    "salesforce.accounts": {
+      "read": 300,
+      "mapped": 292,
+      "quarantined": 8,
+      "collapsed": 0,
+      "inserted": 292,
+      "updated": 0,
+      "stale": 0,
+      "batches": 1
+    },
+    "salesforce.opportunities": {
+      "read": 1200,
+      "mapped": 1166,
+      "quarantined": 34,
+      "collapsed": 0,
+      "inserted": 1166,
+      "updated": 0,
+      "stale": 0,
+      "batches": 1
+    },
+    "sap.customers": {
+      "read": 400,
+      "mapped": 385,
+      "quarantined": 15,
+      "collapsed": 0,
+      "inserted": 385,
+      "updated": 0,
+      "stale": 0,
+      "batches": 1
+    },
+    "sap.sales_orders": {
+      "read": 1500,
+      "mapped": 1457,
+      "quarantined": 43,
+      "collapsed": 0,
+      "inserted": 1457,
+      "updated": 0,
+      "stale": 0,
+      "batches": 1
+    },
+    "vendor.distributor_customers": {
+      "read": 250,
+      "mapped": 245,
+      "quarantined": 5,
+      "collapsed": 0,
+      "inserted": 245,
+      "updated": 0,
+      "stale": 0,
+      "batches": 1
+    }
+  },
+  "records_read": 6083,
+  "injected_defects": 158,
+  "quarantined_records": 189,
+  "defects_caught": 158,
+  "false_quarantines": 0,
+  "orders_expected": 4070,
+  "orders_wrong_or_missing": 0,
+  "orders_unexpected": 0,
+  "order_state_accuracy_pct": 100.0,
+  "orders_referencing_quarantined_customer": 130,
+  "canonical_tables": [
+    [
+      "customer",
+      922
+    ],
+    [
+      "order",
+      4070
+    ]
+  ]
+}
